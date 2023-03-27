@@ -1,0 +1,139 @@
+name: Build and push latest image if needed
+
+on:
+  pull_request:
+    branches:
+      - main
+      - release-*
+      - feature/*
+  push:
+    branches:
+      - main
+      - release-*
+      - feature/*
+
+jobs:
+  check-clickhouse-monitor-changes:
+    name: Check whether clickhouse-monitor image needs to be built based on diff
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: antrea-io/has-changes@v2
+      id: check_diff
+      with:
+        paths: plugins/clickhouse-monitor/* build/images/Dockerfile.clickhouse-monitor.ubuntu
+    outputs:
+      has_changes: ${{ steps.check_diff.outputs.has_changes }}
+
+  build-clickhouse-monitor:
+    needs: check-clickhouse-monitor-changes
+    if: ${{ needs.check-clickhouse-monitor-changes.outputs.has_changes == 'yes' || github.event_name == 'push' }}
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build clickhouse-monitor Docker image
+      run: make clickhouse-monitor
+    - name: Push clickhouse-monitor Docker image to registry
+      if: ${{ github.repository == 'antrea-io/theia' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        docker push antrea/theia-clickhouse-monitor:latest
+  
+  check-clickhouse-server-changes:
+    name: Check whether clickhouse-server image needs to be built based on diff
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: antrea-io/has-changes@v2
+      id: check_diff
+      with:
+        paths: plugins/clickhouse-schema-management/* build/images/Dockerfile.clickhouse-server.ubuntu
+    outputs:
+      has_changes: ${{ steps.check_diff.outputs.has_changes }}
+
+  build-clickhouse-server:
+    needs: check-clickhouse-server-changes
+    if: ${{ needs.check-clickhouse-server-changes.outputs.has_changes == 'yes' || github.event_name == 'push' }}
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Build and push clickhouse-server Docker image to registry
+      if: ${{ github.repository == 'antrea-io/theia' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        VERSION: latest
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        make clickhouse-server-multi-arch
+
+  check-spark-jobs-changes:
+    name: Check whether spark-jobs image needs to be built based on diff
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - uses: antrea-io/has-changes@v2
+      id: check_diff
+      with:
+        paths: plugins/policy-recommendation/* plugins/anomaly-detection/* build/images/Dockerfile.spark-jobs.ubuntu
+    outputs:
+      has_changes: ${{ steps.check_diff.outputs.has_changes }}
+
+  build-spark-jobs:
+    needs: check-spark-jobs-changes
+    if: ${{ needs.check-spark-jobs-changes.outputs.has_changes == 'yes' || github.event_name == 'push' }}
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build spark-jobs Docker image
+      run: make spark-jobs
+    - name: Push spark-jobs Docker image to registry
+      if: ${{ github.repository == 'antrea-io/theia' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        docker push antrea/theia-spark-jobs:latest
+
+  check-theia-manager-changes:
+    name: Check whether theia-manager image needs to be built based on diff
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: antrea-io/has-changes@v2
+        id: check_diff
+        with:
+          paths: pkg/* build/images/Dockerfile.theia-manager.ubuntu
+    outputs:
+      has_changes: ${{ steps.check_diff.outputs.has_changes }}
+
+  build-theia-manager:
+    needs: check-theia-manager-changes
+    if: ${{ needs.check-theia-manager-changes.outputs.has_changes == 'yes' || github.event_name == 'push' }}
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build theia-manager Docker image
+      run: make theia-manager
+    - name: Push theia-manager Docker image to registry
+      if: ${{ github.repository == 'antrea-io/theia' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      env:
+        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+        docker push antrea/theia-manager:latest

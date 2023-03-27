@@ -1,0 +1,27 @@
+apiVersion: v2
+name: theia
+type: application
+displayName: Theia
+home: https://antrea.io/
+version: 0.0.0
+appVersion: latest
+kubeVersion: ">= 1.16.0-0"
+icon: https://raw.githubusercontent.com/antrea-io/antrea/main/docs/assets/logo/antrea_logo.svg
+description: Antrea Network Flow Visibility
+keywords:
+  - Kubernetes
+  - CNCF
+  - Networking
+  - CNI
+  - Security
+  - Open vSwitch
+  - OVS
+  - Antrea
+  - Observability
+  - Flow visibility
+sources:
+  - https://github.com/antrea-io/theia
+annotations:
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/operator: "false"
+  artifacthub.io/prerelease: "false"

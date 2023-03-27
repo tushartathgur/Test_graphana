@@ -1,0 +1,47 @@
+{{- if .Values.theiaManager.enable }}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: theia-cli
+  labels:
+    app: theia-cli
+rules:
+  - apiGroups:
+      - intelligence.theia.antrea.io
+    resources:
+      - networkpolicyrecommendations
+    verbs:
+      - get
+      - list
+      - create
+      - delete
+  - apiGroups:
+      - stats.theia.antrea.io
+    resources:
+      - clickhouse
+    verbs:
+      - get
+  - apiGroups:
+      - system.theia.antrea.io
+    resources:
+      - supportbundles
+    verbs:
+      - get
+      - create
+      - delete
+  - apiGroups:
+      - system.theia.antrea.io
+    resources:
+      - supportbundles/download
+    verbs:
+      - get
+  - apiGroups:
+      - anomalydetector.theia.antrea.io
+    resources:
+      - throughputanomalydetectors
+    verbs:
+      - get
+      - list
+      - create
+      - delete
+{{- end }}
